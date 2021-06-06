@@ -5,7 +5,8 @@ Creative Commons Attribution 4.0 International License.
 
 You should have received a copy of the license along with this
 work. If not, see <http://creativecommons.org/licenses/by/4.0/>. -->
-<meta charset="utf-8" lang="en"><style class="fallback">body{visibility:hidden;}</style>
+<meta charset="utf-8" lang="en" name="viewport" content="width=1024">
+<style class="fallback">body{visibility:hidden;}</style>
 
                 **Lodestar: An Unabridged Rationale**
                             Hamza El-Kebir
@@ -225,6 +226,58 @@ Architecture
 Blocks
 ------------------------------------------------------------------------
 
+A commonly encountered construct in control theory are block diagrams,
+in which functional blocks are interconnected in various ways, not just
+serially, but also in parallel, with feedback, or feedforward, etc.
+
+A block can have multiple inputs and multiple outputs, and one expects
+that the block does _something_ with its inputs are updated. Almost
+always, a change in the input triggers a change in the output of a
+block. Conceptually, blocks are a great visual and logical guide in any
+complex control system design. In terms of implementation in code,
+blocks require a significant amount of foresight during architectural
+design to cover all edge cases.
+
+In its most basic form, a block is simply a container that houses
+an arbitrary number of inputs and outputs (known as _slots_), each being
+of arbitrary type. Whenever an input or output is updated, function
+callbacks specific to each input or output slot will be invoked. While
+this is conceptually simple to grasp, it implies that there are
+infinitely many blocks that one could devise, each of which should have
+some degree of interoperability with the next. This is solved using
+a variadic template design, which allows slots to be defined at
+compile time, and illegal combination of slots and callbacks to be
+caught by the compiler, before any harm can be done at run time.
+
+With this degree of flexibility, it is easy to image a myriad of ways in
+which blocks and callbacks could be "abused" to create unintended
+changes in the system state. One could go as far as to constraint the
+effects of callbacks, such as outputs not changing the internal state of
+an external block, or outputs from one block being barred from directly
+feeding back into its own inputs. With this, I want to quote some words
+of wisdom due to
+[Eric Niebler](http://ericniebler.com/2014/12/07/a-slice-of-python-in-c/):
+
+> "I can’t keep people from writing bad code.
+>  But I’m guilty of collusion if I make it easy."
+
+For this reason, Lodestar sets out to provide a range of standard
+blocks that are guaranteed to be interoperable, with active measures
+to prevent unintended use of their features. It is the intention that 
+these blocks cater to a user's basic needs, with the ability to easily
+conjure up new block types (inherited, or otherwise). In the latter
+case, it is of course the user's responsibility to exercise prudence in
+the way they use their custom blocks.
+
+With this said, it's time for a simple example, in which we define a
+block with inputs <code lang=C++>{int, double, bool}</code> and
+outputs <code lang=C++>{double, double, double}</code>. We show that
+an update to a single input slot can cascade down to multiple changes in
+the outputs by using callback functions.
+
+### Example
+
+We have the following block layout:
 
 ************************************
 *         .---------.              *
@@ -257,9 +310,9 @@ std::function&lt;bool(int)&gt; cbI0_0 = [&block](int i0) {
     return true;
 };
 
-block.setInputCallback&lt;0&gt;(cbI0_0, 0);
-block.setInputCallback&lt;0&gt;(cbI0_0, 1);
-block.setInputCallback&lt;0&gt;(cbI0_0, 2);
+block.setInputCallback&lt;0&gt;(cbI0_0);
+block.setInputCallback&lt;0&gt;(cbI0_0);
+block.setInputCallback&lt;0&gt;(cbI0_0);
 
 std::function&lt;bool(int)&gt; cbI0_3 = [&block](int i0) {
     block.setOutput&lt;1&gt;(block.getOutput&lt;0&gt;() + i0);
@@ -268,7 +321,7 @@ std::function&lt;bool(int)&gt; cbI0_3 = [&block](int i0) {
     return true;
 };
 
-block.setInputCallback&lt;0&gt;(cbI0_3, 3);
+block.setInputCallback&lt;0&gt;(cbI0_3);
 
 block.setInput&lt;0&gt; = 1;
 
@@ -285,6 +338,23 @@ std::cout &lt;&lt; "O2: " &lt;&lt; block.getOutput&lt;2&gt;() &lt;&lt; std::endl
 Messages
 ------------------------------------------------------------------------
 
+### Message Passing
+
+In a setting in which we would like to have multiple monitoring (and
+perhaps interacting) clients, a (bidirectional) publisher-subscriber
+communication paradigm provides most flexibility. However, one must be
+mindful of the performance demands of such a communication protocol,
+making a communication library with large overhead and numerous
+callbacks unsuitable.
+
+For this reason, we chose to use [_NNG_](https://nng.nanomsg.org/)
+(_Nanomsg Next Generation_), which is a very light-weight library that
+provides an abstraction on top of platform-specific communication APIs,
+as well as providing a baseline implementation of a number of popular
+messaging solutions.
+
+### Serialization
+
 We use [nanopb](https://jpa.kapsi.fi/nanopb/), a light-weight
 header-only implementation of Google's
 [Protocol Buffers](https://developers.google.com/protocol-buffers)
@@ -296,11 +366,101 @@ the fact that dynamic types can be constrained to have a fixed maximum
 length. As an example, a `string` object may have abitrary length,
 whereas if we constrain it to be of length 16 characters, we can
 allocate it as <code lang=C++>char[17]</code> instead (the `+1` comes
-from <code lang=C++>'\0'</code>). This provides yet another mechanism to
-statically allocated memory at compile time.
+from <code lang=C++>'\0'</code>). This provides yet another mechanism
+for statically allocating memory at compile time.
 
 Thread Safety
 ------------------------------------------------------------------------
+
+Instead of using context-specific `mutex`es, it is often safer to simply
+assign a purpose built mutex to each object that needs to be
+thread-safe. A great header-only package that achieves this is
+[_safe_'](https://github.com/LouisCharlesC/safe). 
+
+The following is a thread-safe example of three threads, two of which
+that increment and decrement an integer, and one that prints its value.
+These threads run on different timescales, but write access to a shared
+variable can be easily made thread-safe using _safe_. We use _NNG_
+utilities to create simple cross-platform threads (see
+[here](https://nng.nanomsg.org/man/v1.3.2/nng_thread_create.3supp.html)
+for more information).
+
+~~~~~~~~~~~~~~~~~~~ C++ linenumbers
+#ifndef SAFEDEMO_HPP
+#define SAFEDEMO_HPP
+
+#include "safe/safe.h"
+#include &lt;nng/nng.h&gt;
+#include &lt;nng/supplemental/util/platform.h&gt;
+
+#include &lt;unistd.h&gt;
+#include &lt;iostream&gt;
+
+// nng_thread_create passes a single void pointer as an argument.
+void addRoutine(void *arg)
+{
+    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+
+    for (;;) {
+        { // Scoping is needed to prevent unnecessary resource blocking. 
+            safe::WriteAccess&lt;safe::Safe&lt;int&gt;&gt; val(*safeVal);
+            (*val)++;
+        }
+        usleep(10000); // Every 10 ms
+    }
+}
+
+void subRoutine(void *arg)
+{
+    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+
+    for (;;) {
+        {
+            safe::WriteAccess&lt;safe::Safe&lt;int&gt;&gt; val(*safeVal);
+            (*val)--;
+        }
+        usleep(10000); // Every 10 ms
+    }
+}
+
+void printRoutine(void *arg)
+{
+    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+
+    for (;;) {
+        std::cout &lt;&lt; safeVal-&gt;unsafe() &lt;&lt; std::endl;
+        usleep(100000); // Every 100 ms
+    }
+}
+
+void safeTest()
+{
+    typedef safe::Safe&lt;int&gt; SafeInt;
+
+    SafeInt safeVal;
+    void *safeValVoidPtr = static_cast&lt;void*&gt;(&safeVal);
+    {
+        safe::WriteAccess&lt;SafeInt&gt; val(safeVal);
+        *val = 33;
+    }
+
+    nng_thread *addThread, *subThread, *printThread;
+    nng_thread_create(&addThread, addRoutine, safeValVoidPtr);
+    nng_thread_create(&subThread, subRoutine, safeValVoidPtr);
+    nng_thread_create(&printThread, printRoutine, safeValVoidPtr);
+
+    // This is never reached, but should always be present for threads
+    // with finite execution time.
+    nng_thread_destroy(addThread);
+    nng_thread_destroy(subThread);
+    nng_thread_destroy(printThread);
+
+    std::cout &lt;&lt; "Final value" &lt;&lt; safeVal.unsafe() &lt;&lt; std::endl;
+}
+
+#endif //SAFEDEMO_HPP
+~~~~~~~~~~~~~~~~~~~
+[Listing [safedemocode]: An example use case of _safe_.]
 
 (##) Glossary
 
