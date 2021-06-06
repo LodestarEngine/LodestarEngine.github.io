@@ -34,7 +34,7 @@ flexible API[^api].
 !!! WARNING
     This page is still under construction.
 
-[^lastupdated]: _Last updated_: June 5, 2021
+[^lastupdated]: _Last updated_: June 6, 2021
 
 Core Principles
 ========================================================================
@@ -80,18 +80,19 @@ What Constitutes Control?
 Code Style
 ========================================================================
 
+<script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 #ifndef LODESTAR_CONTAINER_HPP
 #define LODESTAR_CONTAINER_HPP
 
-#include &lt;array&gt;
+#include <array>
 // Note that we do not use `using std` to limit namespace pollution/clashes
 
 // Preprocessor directives and their arguments should be in upper snake case 
-#define STATIC_GET(ARRAY, IDX) std::get&lt;IDX&gt;(ARRAY)
+#define STATIC_GET(ARRAY, IDX) std::get<IDX>(ARRAY)
 
 // Template arguments should be descriptive, written in upper camel case, and prefixed with T*
-template &lt;typename TType&gt;
+template <typename TType>
 // Constexpr should be prefixed with K*, and the following word should be in lower camel case.
 constexpr TType &Kmax(const TType &a, const TType &b)
 {   // K&R-style brace placement (preceded by a linebreak) for functions
@@ -103,12 +104,12 @@ constexpr TType &Kmax(const TType &a, const TType &b)
 // Constant variables are prefixed with k*
 const static unsigned int kDefaultSize = 10;
 
-template &lt;typename TType, unsigned int TSize = kDefaultSize&gt;
+template <typename TType, unsigned int TSize = kDefaultSize>
 // Class names should be in upper camel case
 class Container {
 public:
     // Typedefs should be descriptive and are prefixed with TD*
-    typedef std::array&lt;TType, TSize&gt; TDArray;
+    typedef std::array<TType, TSize> TDArray;
 
     Container() : array_(TDArray{}) {}
 
@@ -165,13 +166,13 @@ public:
     const unsigned int kSize = TSize;
 protected:
     // Private/protected member variables are postfixed with *_
-    std::array&lt;TType, TSize&gt; array_;
+    std::array<TType, TSize> array_;
 
     // Static members may be prefixed with z* in case of ambiguities
-    template&lt;unsigned int TSizeOther&gt;
-    Container&lt;TType, TSize&gt; zCopyContainer(const Container&lt;TType, TSizeOther&gt; &other)
+    template<unsigned int TSizeOther>
+    Container<TType, TSize> zCopyContainer(const Container<TType, TSizeOther> &other)
     {
-        Container&lt;TType, TSize&gt; container{};
+        Container<TType, TSize> container{};
 
         unsigned int i = 0;
         while ((i < other.kSize) && (i < TSize))
@@ -187,6 +188,7 @@ protected:
 #endif //LODESTAR_CONTAINER_HPP
 ~~~~~~~~~~~~~~~~~~~~~~~
 [Listing [styleexample]: A code style example.]
+</script>
 
 Letter Prefixes
 ------------------------------------------------------------------------
@@ -294,46 +296,48 @@ We have the following block layout:
 ************************************
 [Figure [block]: Block with callbacks.]
 
+<script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~ C++ linenumbers
-auto block = Block&lt;std::tuple&lt;int, double, bool&gt;, std::tuple&lt;double, double, double&gt;&gt;{};
+auto block = Block<std::tuple<int, double, bool>, std::tuple<double, double, double>{};
 
-block.setInput&lt;0&gt; = 0;
-block.setInput&lt;1&gt; = 3;
-block.setInput&lt;2&gt; = true;
+block.setInput<0> = 0;
+block.setInput<1> = 3;
+block.setInput<2> = true;
 
-std::function&lt;bool(int)&gt; cbI0_0 = [&block](int i0) {
-    if (block.getInput&lt;2&gt;())
-        block.setOutput&lt;0&gt;(block.getOutput&lt;0&gt;() + i0 + block.getInput&lt;1&gt;());
+std::function<bool(int)> cbI0_0 = [&block](int i0) {
+    if (block.getInput<2>())
+        block.setOutput<0>(block.getOutput<0>() + i0 + block.getInput<1>());
     else
-        block.setOutput&lt;0&gt;(block.getOutput&lt;0&gt;() - i0 + block.getInput&lt;1&gt;());
+        block.setOutput<0>(block.getOutput<0>() - i0 + block.getInput<1>());
     
     return true;
 };
 
-block.setInputCallback&lt;0&gt;(cbI0_0);
-block.setInputCallback&lt;0&gt;(cbI0_0);
-block.setInputCallback&lt;0&gt;(cbI0_0);
+block.setInputCallback<0>(cbI0_0);
+block.setInputCallback<0>(cbI0_0);
+block.setInputCallback<0>(cbI0_0);
 
-std::function&lt;bool(int)&gt; cbI0_3 = [&block](int i0) {
-    block.setOutput&lt;1&gt;(block.getOutput&lt;0&gt;() + i0);
-    block.setOutput&lt;2&gt;(block.getOutput&lt;1&gt;() + i0);
+std::function<bool(int)> cbI0_3 = [&block](int i0) {
+    block.setOutput<1>(block.getOutput<0>() + i0);
+    block.setOutput<2>(block.getOutput<1>() + i0);
     
     return true;
 };
 
-block.setInputCallback&lt;0&gt;(cbI0_3);
+block.setInputCallback<0>(cbI0_3);
 
-block.setInput&lt;0&gt; = 1;
+block.setInput<0> = 1;
 
-std::cout &lt;&lt; "O0: " &lt;&lt; block.getOutput&lt;0&gt;() &lt;&lt; std::endl;
-std::cout &lt;&lt; "O1: " &lt;&lt; block.getOutput&lt;1&gt;() &lt;&lt; std::endl;
-std::cout &lt;&lt; "O2: " &lt;&lt; block.getOutput&lt;2&gt;() &lt;&lt; std::endl;
+std::cout << "O0: " << block.getOutput<0>() << std::endl;
+std::cout << "O1: " << block.getOutput<1>() << std::endl;
+std::cout << "O2: " << block.getOutput<2>() << std::endl;
 
 //> O0: 12
 //> O1: 13
 //> O2: 4
 ~~~~~~~~~~~~~~~~~~~
 [Listing [blockcode]: An example of a Block implementation.]
+</script>
 
 Messages
 ------------------------------------------------------------------------
@@ -385,25 +389,26 @@ utilities to create simple cross-platform threads (see
 [here](https://nng.nanomsg.org/man/v1.3.2/nng_thread_create.3supp.html)
 for more information).
 
+<script type="preformatted">
 ~~~~~~~~~~~~~~~~~~~ C++ linenumbers
 #ifndef SAFEDEMO_HPP
 #define SAFEDEMO_HPP
 
 #include "safe/safe.h"
-#include &lt;nng/nng.h&gt;
-#include &lt;nng/supplemental/util/platform.h&gt;
+#include <nng/nng.h>
+#include <nng/supplemental/util/platform.h>
 
-#include &lt;unistd.h&gt;
-#include &lt;iostream&gt;
+#include <unistd.h>
+#include <iostream>
 
 // nng_thread_create passes a single void pointer as an argument.
 void addRoutine(void *arg)
 {
-    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+    safe::Safe<int> *safeVal = static_cast<safe::Safe<int>*>(arg);
 
     for (;;) {
         { // Scoping is needed to prevent unnecessary resource blocking. 
-            safe::WriteAccess&lt;safe::Safe&lt;int&gt;&gt; val(*safeVal);
+            safe::WriteAccess<safe::Safe<int> val(*safeVal);
             (*val)++;
         }
         usleep(10000); // Every 10 ms
@@ -412,11 +417,11 @@ void addRoutine(void *arg)
 
 void subRoutine(void *arg)
 {
-    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+    safe::Safe<int> *safeVal = static_cast<safe::Safe<int>*>(arg);
 
     for (;;) {
         {
-            safe::WriteAccess&lt;safe::Safe&lt;int&gt;&gt; val(*safeVal);
+            safe::WriteAccess<safe::Safe<int> val(*safeVal);
             (*val)--;
         }
         usleep(10000); // Every 10 ms
@@ -425,22 +430,22 @@ void subRoutine(void *arg)
 
 void printRoutine(void *arg)
 {
-    safe::Safe&lt;int&gt; *safeVal = static_cast&lt;safe::Safe&lt;int&gt;*&gt;(arg);
+    safe::Safe<int> *safeVal = static_cast<safe::Safe<int>*>(arg);
 
     for (;;) {
-        std::cout &lt;&lt; safeVal-&gt;unsafe() &lt;&lt; std::endl;
+        std::cout << safeVal->unsafe() << std::endl;
         usleep(100000); // Every 100 ms
     }
 }
 
 void safeTest()
 {
-    typedef safe::Safe&lt;int&gt; SafeInt;
+    typedef safe::Safe<int> SafeInt;
 
     SafeInt safeVal;
-    void *safeValVoidPtr = static_cast&lt;void*&gt;(&safeVal);
+    void *safeValVoidPtr = static_cast<void*>(&safeVal);
     {
-        safe::WriteAccess&lt;SafeInt&gt; val(safeVal);
+        safe::WriteAccess<SafeInt> val(safeVal);
         *val = 33;
     }
 
@@ -455,12 +460,13 @@ void safeTest()
     nng_thread_destroy(subThread);
     nng_thread_destroy(printThread);
 
-    std::cout &lt;&lt; "Final value" &lt;&lt; safeVal.unsafe() &lt;&lt; std::endl;
+    std::cout << "Final value" << safeVal.unsafe() << std::endl;
 }
 
 #endif //SAFEDEMO_HPP
 ~~~~~~~~~~~~~~~~~~~
 [Listing [safedemocode]: An example use case of _safe_.]
+</script>
 
 (##) Glossary
 
