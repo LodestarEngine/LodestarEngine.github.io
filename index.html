@@ -64,18 +64,83 @@ Lodestar is built on the following core principles:
 Levels of Real-time
 ------------------------------------------------------------------------
 
+The following is a common classification of levels of real-time:
+
 1. **Soft real-time**: Delayed process completion may degrade a system's
     quality of service, but is tolerable.
 2. **Firm real-time**: Delayed process completion may degrade a system's
     quality of service, but is tolerable if infrequent.
-3. **Firm real-time**: Delayed process completion results in system
+3. **Hard real-time**: Delayed process completion results in system
     failure.
+
+At least for the initial stages, Lodestar will try to get to the level
+where one could reliably call it a firm real-time framework. With
+sufficient testing and profiling in a hardware emulator, it is possible
+to extend a firm real-time system to a hard real-time system, but it
+could be the case that additional safety features and fallbacks are
+expected. This is, for now, beyond the scope of the library.
 
 What Constitutes Control?
 ------------------------------------------------------------------------
 
 !!! WARNING
     Opinions ahead.
+
+Current and Future Features
+========================================================================
+
+For now, this section will be a checkboxed list; more details will
+follow. We adhere in most cases to the classification system used in 
+[SLICOT](http://slicot.org/the-control-and-systems-library-slicot/slicot-library-organization)[^slicot].
+
+- [ ] **A**: Analysis Routines
+    - [ ] **AB**: State-Space Analysis
+        - [x] **AB04**: Continuous/Discrete Time
+            - [x] **AB04MD**: Discrete-time <-> continuous-time
+                conversion by bilinear transformation.
+                    - Generalized bilinear transformations have been
+                        implemented, with specialization for Tustin, Euler,
+                        and backward differencing transforms.<br>
+                        [<code lang=C++>ls::analysis::BilinearTransformation</code>](https://github.com/helkebir/Lodestar/blob/master/src/analysis/BilinearTransformation.hpp)
+                    - Beyond the SLICOT spec, zero-order hold
+                        transformations based on exponential and logarithmic
+                        matrices have been implemented.<br>
+                        [<code lang=C++>ls::analysis::ZeroOrderHold</code>](https://github.com/helkebir/Lodestar/blob/master/src/analysis/ZeroOrderHold.hpp)
+        - [ ] **AB07**: Inverse and Dual Systems
+            - [x] **AB07ND**: Inverse of a given state-space representation
+                - Continuous-time state space inverses have been
+                    implement, but error handling is not properly done.
+                    <br>
+                    [<code lang=C++>ls::analysis::LinearSystemInverse</code>](https://github.com/helkebir/Lodestar/blob/master/src/analysis/LinearSystemInverse.hpp)
+
+- [ ] **S**: Synthesis Routines
+    - [ ] **SB**: State-Space Synthesis
+        - [ ] **SB02**: Riccati Equations
+            - [ ] **SB02MD**: Solution of continuous- or discrete-time
+                algebraic Riccati equations (Schur vectors method)
+                    - A discrete-time ARE solver is currently in
+                        development.<br>
+                        [<code lang=C++>ls::synthesis::AlgebraicRiccatiEquation::solveDARE</code>](https://github.com/helkebir/Lodestar/blob/master/src/synthesis/AlgebraicRiccatiEquation.hpp)
+
+- [ ] **T**: Transformation Routines
+    - [ ] **TD**: Rational Matrix
+        - [x] **TD05**: Rational Matrix to State-Space Conversion
+            - [x] **TD05AD**: Minimal state-space representation for a
+                proper transfer matrix 
+                    - This is currently implemented for scalar transfer
+                        functions, but can easily be extended to
+                        transfer function matrices.<br>
+                        [<code lang=C++>ls::systems::TransferFunction::toStateSpace</code>](https://github.com/helkebir/Lodestar/blob/master/src/systems/TransferFunction.hpp)
+
+- [ ] **U**: Utility Routines
+    - [ ] **UD**: Numerical Data Handling
+        - [ ] **UD01**: _N/A_
+            - [x] **UD01BD**: Reading a matrix polynomial
+                - This is achieved using _GiNac_ routines; currently
+                    only scalar transfer functions are implemented, but
+                    this is easily extendable.<br>
+                    [<code lang=C++>ls::systems::TransferFunction::copyFromExpression</code>](https://github.com/helkebir/Lodestar/blob/master/src/systems/TransferFunction.hpp)
+    - [ ] ***US***: Symbolic Manipulation/Data Handling
 
 Code Style
 ========================================================================
@@ -251,13 +316,14 @@ a variadic template design, which allows slots to be defined at
 compile time, and illegal combination of slots and callbacks to be
 caught by the compiler, before any harm can be done at run time.
 
-With this degree of flexibility, it is easy to image a myriad of ways in
-which blocks and callbacks could be "abused" to create unintended
-changes in the system state. One could go as far as to constraint the
+With this degree of flexibility, it is easy to imagin a myriad of ways
+in which blocks and callbacks could be "abused" to create unintended
+changes in the system state. One could go as far as to constrain the
 effects of callbacks, such as outputs not changing the internal state of
 an external block, or outputs from one block being barred from directly
-feeding back into its own inputs. With this, I want to quote some words
-of wisdom due to
+feeding back into its own inputs. In spite of any of these safeguards,
+the user can still easily bypass any restrictions. With this, I want to
+quote some words of wisdom due to
 [Eric Niebler](http://ericniebler.com/2014/12/07/a-slice-of-python-in-c/):
 
 > "I can’t keep people from writing bad code.
@@ -478,6 +544,8 @@ void safeTest()
 
 [^posix]: **POSIX**: Portable Operating System Interface, a family of standards
 described in IEEE 1003 and ISO/IEC 9945.
+
+[^slicot]: **SLICOT**: Subroutine Library in Systems and Control Theory.
 
 
 <!-- Markdeep: --><script src="markdeep.js" charset="utf-8"></script>
