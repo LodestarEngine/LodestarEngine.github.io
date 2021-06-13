@@ -11,7 +11,20 @@ work. If not, see <http://creativecommons.org/licenses/by/4.0/>. -->
                 **Lodestar: An Unabridged Rationale**
                             Hamza El-Kebir
 
-![Lodestar logo.](img/LodestarLogoOnly.png width="17%") In this
+<a href="https://github.com/helkebir/Lodestar/actions/workflows/main.yml">
+    <img src="https://github.com/helkebir/Lodestar/actions/workflows/main.yml/badge.svg">
+</a>
+<a href="https://opensource.org/licenses/BSD-3-Clause">
+    <img src="https://img.shields.io/badge/license-BSD3-success">
+</a>
+<a href="https://opensource.org/licenses/BSD-3-Clause">
+    <img src="https://img.shields.io/badge/c%2B%2B-%3E%3D11-informational">
+</a>
+<!-- <a href="https://github.com/helkebir/Lodestar">
+    <img src="https://img.shields.io/github/last-commit/helkebir/Lodestar">
+</a> -->
+
+![Lodestar logo.](img/LodestarLogoOnly.png width="17%") On this
 page[^lastupdated], I describe in detail the rationale and philosophy
 that underpins the development of
 [Lodestar](https://github.com/helkebir/Lodestar), an open-source
@@ -34,7 +47,7 @@ flexible API[^api].
 !!! WARNING
     This page is still under construction.
 
-[^lastupdated]: _Last updated_: June 6, 2021
+[^lastupdated]: _Last updated_: June 13, 2021
 
 Core Principles
 ========================================================================
@@ -92,6 +105,8 @@ Current and Future Features
 For now, this section will be a checkboxed list; more details will
 follow. We adhere in most cases to the classification system used in 
 [SLICOT](http://slicot.org/the-control-and-systems-library-slicot/slicot-library-organization)[^slicot].
+Cursive identifiers are extensions to the SLICOT system that we devised
+for additional features that Lodestar provides.
 
 - [ ] **A**: Analysis Routines
     - [ ] **AB**: State-Space Analysis
@@ -112,6 +127,16 @@ follow. We adhere in most cases to the classification system used in
                     implement, but error handling is not properly done.
                     <br>
                     [<code lang=C++>ls::analysis::LinearSystemInverse</code>](https://github.com/helkebir/Lodestar/blob/master/src/analysis/LinearSystemInverse.hpp)
+
+- [ ] **F**: Filtering
+    - [ ] **FB**: Kalman Filters
+        - [ ] **FB01**: _N/A_
+            - [ ] **FB01VD**: One recursion of the conventional Kalman
+                filter
+                    - We currently have an implementation for finite
+                        horizon Kalman gain computation for
+                        discrete-time linear time invariant systems.<br>
+                        [<code lang=C++>ls::filter::DiscreteLQE</code>](https://github.com/helkebir/Lodestar/blob/master/src/filter/DiscreteLQE.hpp)
 
 - [ ] **S**: Synthesis Routines
     - [ ] **SB**: State-Space Synthesis
@@ -136,11 +161,12 @@ follow. We adhere in most cases to the classification system used in
     - [ ] **UD**: Numerical Data Handling
         - [ ] **UD01**: _N/A_
             - [x] **UD01BD**: Reading a matrix polynomial
-                - This is achieved using _GiNac_ routines; currently
+                - This is achieved using _GiNaC_ routines; currently
                     only scalar transfer functions are implemented, but
                     this is easily extendable.<br>
                     [<code lang=C++>ls::systems::TransferFunction::copyFromExpression</code>](https://github.com/helkebir/Lodestar/blob/master/src/systems/TransferFunction.hpp)
-    - [ ] ***US***: Symbolic Manipulation/Data Handling
+    - [ ] ***US***: _Symbolic Manipulation/Data Handling_
+        - [ ] ***US01***: _Ordinary Differential Equations_
 
 Code Style
 ========================================================================
