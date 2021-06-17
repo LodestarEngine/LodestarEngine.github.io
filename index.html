@@ -17,7 +17,7 @@ work. If not, see <http://creativecommons.org/licenses/by/4.0/>. -->
 <a href="https://opensource.org/licenses/BSD-3-Clause">
     <img src="https://img.shields.io/badge/license-BSD3-success">
 </a>
-<a href="https://opensource.org/licenses/BSD-3-Clause">
+<a href="https://isocpp.org/wiki/faq/cpp11">
     <img src="https://img.shields.io/badge/c%2B%2B-%3E%3D11-informational">
 </a>
 <!-- <a href="https://github.com/helkebir/Lodestar">
@@ -35,9 +35,9 @@ accessible library for applying control theoretic concepts on real-life
 (embedded) systems. While platforms such as
 [ROS](https://www.ros.org/)[^ros] are popular in robotics, people
 working with applications that require real-time viable code and thread
-safety are often compelled to write their own solutions, with propertary
-implementations being the norm, and a single unified solution is left to
-be desired.
+safety are often compelled to write their own solutions, with
+propiertary implementations being the norm, and a single unified
+solution is left to be desired.
 
 With this in mind, I set out to develop a unified and approachable
 control library, with the explicit intention to make it as real-time
@@ -47,7 +47,7 @@ flexible API[^api].
 !!! WARNING
     This page is still under construction.
 
-[^lastupdated]: _Last updated_: June 13, 2021
+[^lastupdated]: _Last updated_: June 17, 2021
 
 Core Principles
 ========================================================================
@@ -161,7 +161,7 @@ for additional features that Lodestar provides.
     - [ ] **UD**: Numerical Data Handling
         - [ ] **UD01**: _N/A_
             - [x] **UD01BD**: Reading a matrix polynomial
-                - This is achieved using _GiNaC_ routines; currently
+                - This is achieved using _GiNaC_[^ginac] routines; currently
                     only scalar transfer functions are implemented, but
                     this is easily extendable.<br>
                     [<code lang=C++>ls::systems::TransferFunction::copyFromExpression</code>](https://github.com/helkebir/Lodestar/blob/master/src/systems/TransferFunction.hpp)
@@ -324,7 +324,7 @@ in which functional blocks are interconnected in various ways, not just
 serially, but also in parallel, with feedback, or feedforward, etc.
 
 A block can have multiple inputs and multiple outputs, and one expects
-that the block does _something_ with its inputs are updated. Almost
+that the block does _something_ with its input updates. Almost
 always, a change in the input triggers a change in the output of a
 block. Conceptually, blocks are a great visual and logical guide in any
 complex control system design. In terms of implementation in code,
@@ -471,7 +471,7 @@ Thread Safety
 Instead of using context-specific `mutex`es, it is often safer to simply
 assign a purpose built mutex to each object that needs to be
 thread-safe. A great header-only package that achieves this is
-[_safe_'](https://github.com/LouisCharlesC/safe). 
+[_safe_](https://github.com/LouisCharlesC/safe). 
 
 The following is a thread-safe example of three threads, two of which
 that increment and decrement an integer, and one that prints its value.
@@ -560,18 +560,67 @@ void safeTest()
 [Listing [safedemocode]: An example use case of _safe_.]
 </script>
 
+License & Dependencies
+========================================================================
+
+Lodestar is licensed under the permissive
+[BSD-3-Clause](https://opensource.org/licenses/BSD-3-Clause) license.
+All other content on this website is licensed under the
+[CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/deed.ast)
+license, unless stated otherwise.
+
+Lodestar currently is currently dependent on the following packages:
+
+- **Eigen**:
+[Eigen 3.3.9](https://eigen.tuxfamily.org/index.php?title=Main_Page) is
+bundled with Lodestar. Only MPL'ed elements are used
+(see `CMakeLists.txt` for the `EIGEN_MPL2_ONLY` flag). The
+[Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/FAQ/)
+is not as invasive as (L)GPL, in that is requires attribution, directions
+to obtain the original MPL'ed source code, and an obligation to shared
+edits made to MPL'ed code under the MPL license. MPL was created to
+allow for compatiblity with the BSD family of licenses out of the box.
+
+- **GiNaC**:
+[GiNaC](https://www.ginac.de/) is not bundled with Lodestar, and has to
+be provided as a library. Since GiNaC is licensed under the terms of
+[GPL 3.0](https://www.gnu.org/licenses/gpl-3.0.en.html), it is not
+suitable for use in closed-source project. For this reason, GiNaC will
+mostly be used for code generation, after which it will not be included
+in compiled binaries.
+
+- **Nanopb**:
+[Nanopb 0.4.5](https://github.com/nanopb/nanopb) is bundled with
+Lodestar. Nanopb is licensed under the
+[zlib](https://opensource.org/licenses/Zlib) license, which is directly
+compatible with Lodestar's BSD-3 license.
+
+- **NNG** (_Nanomsg Next Generation_):
+[NNG](https://nng.nanomsg.org/) has to be provided as a library, and is
+not bundled with Lodestar. NNG uses the
+[MIT](https://opensource.org/licenses/MIT) license, which is directly
+compatible with Lodestar's BSD-3 license.
+
+<a href="https://app.fossa.com/projects/git%2Bgithub.com%2Fhelkebir%2FLodestar?ref=badge_large">
+    <img src="https://app.fossa.com/api/projects/git%2Bgithub.com%2Fhelkebir%2FLodestar.svg?type=large">
+</a>
+
 (##) Glossary
 
 *Terms are listed in order of first appearance.*
 
 [^ros]: **ROS**: Robot Operating System.
 
-[^api]: **API**: Application programmer interface.
+[^api]: **API**: Application Programming Interface.
 
 [^posix]: **POSIX**: Portable Operating System Interface, a family of standards
 described in IEEE 1003 and ISO/IEC 9945.
 
 [^slicot]: **SLICOT**: Subroutine Library in Systems and Control Theory.
+
+[^ginac]: **GiNaC**: GiNac is Not a CAS (Computer Algebra System).
+
+[^bsd]: **BSD**: Berkeley Software Distribution, a family of licenses.
 
 
 <!-- Markdeep: --><script src="markdeep.js" charset="utf-8"></script>
